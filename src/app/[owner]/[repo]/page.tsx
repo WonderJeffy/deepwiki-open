@@ -545,7 +545,9 @@ Remember:
         try {
           // Create WebSocket URL from the server base URL
           const serverBaseUrl = process.env.SERVER_BASE_URL || 'http://localhost:8001';
-          const wsBaseUrl = serverBaseUrl.replace(/^http/, 'ws')? serverBaseUrl.replace(/^https/, 'wss'): serverBaseUrl.replace(/^http/, 'ws');
+          const wsBaseUrl = serverBaseUrl.startsWith('https')
+            ? serverBaseUrl.replace(/^https/, 'wss')
+            : serverBaseUrl.replace(/^http/, 'ws');
           const wsUrl = `${wsBaseUrl}/ws/chat`;
 
           // Create a new WebSocket connection
@@ -842,7 +844,9 @@ IMPORTANT:
       try {
         // Create WebSocket URL from the server base URL
         const serverBaseUrl = process.env.SERVER_BASE_URL || 'http://localhost:8001';
-        const wsBaseUrl = serverBaseUrl.replace(/^http/, 'ws')? serverBaseUrl.replace(/^https/, 'wss'): serverBaseUrl.replace(/^http/, 'ws');
+        const wsBaseUrl = serverBaseUrl.startsWith('https')
+          ? serverBaseUrl.replace(/^https/, 'wss')
+          : serverBaseUrl.replace(/^http/, 'ws');
         const wsUrl = `${wsBaseUrl}/ws/chat`;
 
         // Create a new WebSocket connection
@@ -945,6 +949,15 @@ IMPORTANT:
       // Extract wiki structure from response
       const xmlMatch = responseText.match(/<wiki_structure>[\s\S]*?<\/wiki_structure>/m);
       if (!xmlMatch) {
+        const preview = (responseText || '').slice(0, 400);
+        console.error('ResponseText preview (first 400 chars):', preview);
+        if (!responseText || responseText.trim().length === 0) {
+          throw new Error('Empty response from model while determining wiki structure');
+        }
+        const errLine = responseText.match(/Error:[^\n]*/);
+        if (errLine && errLine[0]) {
+          throw new Error(errLine[0]);
+        }
         throw new Error('No valid XML found in response');
       }
 
